@@ -1,0 +1,329 @@
+from fastapi import FastAPI, HTTPException, Response
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import re, os, csv, json, urllib.request, urllib.error
+
+BACKEND = os.environ.get("MT_BACKEND","http://127.0.0.1:8090/translate")
+PROVIDER = os.environ.get("PROVIDER_URL")
+TIMEOUT = int(os.environ.get("MT_TIMEOUT","60"))
+TM_SOFT_THRESHOLD = float(os.environ.get("TM_SOFT_THRESHOLD","0.90"))
+
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], allow_methods=["*"],
+    allow_headers=["*", "x-anni-key", "X-API-Key", "content-type"]
+)
+
+@app.exception_handler(Exception)
+async def _err_handler(request, exc):
+    import traceback
+    return JSONResponse(status_code=500, content={"ok": False, "error": str(exc), "trace": traceback.format_exc()})
+
+PH_RE       = re.compile(r"\{\{[^}]+\}\}")
+SINGLE_PH_RE= re.compile(r"\{[A-Za-z0-9_]+\}")
+NUM_RE      = re.compile(r"\d+[.,]?\d*")
+TAG_RE      = re.compile(r"</?([A-Za-z0-9]+)[^>]*>")
+TAG_FULL_RE = re.compile(r"(</?[A-Za-z0-9]+(?:\s[^>]*?)?>)")
+AMPM_RE     = re.compile(r"\b([1-9]|1[0-2])\s*(a\.?m\.?|p\.?m\.?)\b", re.I)
+EMOJI_RE    = re.compile('[\u2600-\u27BF\uFE0F\U0001F1E6-\U0001F1FF\U0001F300-\U0001FAFF]')
+SYMBOL_RE   = re.compile(r'[®™©℠]')
+HASHTAG_RE  = re.compile(r'#[A-Za-z0-9_ÄÖÜäöüß\.\-]+')
+
+def has_emoji(t:str)->bool:
+    try: return bool(EMOJI_RE.search(t or ""))
+    except Exception: return False
+
+ABBR_PAT = [r"Mr\.", r"Mrs\.", r"Ms\.", r"Dr\.", r"Prof\.", r"Sr\.", r"Jr\.", r"vs\.", r"etc\.", r"e\.g\.", r"i\.e\."]
+SPLIT_RE = re.compile(r"(?<=[.!?])\s+(?=[A-Z0-9])")
+
+def mask_abbr(t:str)->str:
+    for p in ABBR_PAT: t = re.sub(p, lambda m: m.group(0).replace(".","§DOT§"), t, flags=re.I)
+    return t
+def unmask_abbr(t:str)->str: return t.replace("§DOT§",".")
+
+def sentence_split(text:str):
+    t=mask_abbr(text)
+    parts=[p.strip() for p in SPLIT_RE.split(t)]
+    parts=[unmask_abbr(p) for p in parts if p]
+    return parts if parts else [text]
+
+def digits_only(s): return re.sub(r"\D","",s or "")
+def tags(sig): return [m.group(0).lower().replace(" ","") for m in TAG_RE.finditer(sig)]
+
+def numbers_ok(src:str, out:str)->bool:
+    out_dig = digits_only(out)
+    src_nums = NUM_RE.findall(src)
+    direct_ok = True
+    for n in src_nums:
+        if digits_only(n) not in out_dig:
+            direct_ok = False
+            break
+    if direct_ok: return True
+    had_ampm=False
+    parts = re.findall(r"\d{1,4}", out)
+    present = lambda x: x in out_dig or x in parts
+    for m in AMPM_RE.finditer(src):
+        had_ampm=True
+        val=int(m.group(1)); mer=m.group(2).lower()
+        if 'p' in mer and 1<=val<=11:
+            if not (present(str(val)) or present(str(val+12))): return False
+        else:
+            if not present(str(val)): return False
+    return had_ampm or direct_ok
+
+def check_invariants(src:str, out:str):
+    ph_ok  = all(p in out for p in PH_RE.findall(src))
+    num_ok = numbers_ok(src, out)
+    html_ok= sorted(tags(src)) == sorted(tags(out))
+    paren_ok = True
+    src_len=len(src); ratio=(len(out)+1)/(src_len+1)
+    len_ok = (0.4 <= ratio <= 4.0) if src_len < 20 else (0.5 <= ratio <= 2.2)
+    ok = ph_ok and num_ok and html_ok and paren_ok and len_ok
+    return {"ok": ok, "ph_ok": ph_ok, "num_ok": num_ok, "html_ok": html_ok, "paren_ok": paren_ok, "len_ratio": round(ratio,2)}
+
+def cp1252_cleanup(t:str)->str:
+    return t.replace("Â©","©").replace("Â®","®").replace("Â·","·").replace("Â","")
+
+EN_LIKELY = re.compile(r"\b(the|and|you|we|in|on|with|price|now)\b", re.I)
+def fix_sentence_case_en(t:str)->str:
+    if not EN_LIKELY.search(t): return t
+    t=re.sub(r'(\{\{[^}]+\}\}\s+)([A-Z][a-z]+\b)', lambda m: m.group(1)+m.group(2).lower(), t)
+    t=re.sub(r'(</[^>]+>\s+)([A-Z][a-z]+\b)',   lambda m: m.group(1)+m.group(2).lower(), t)
+    t=re.sub(r'(–\s+)([A-Z][a-z]+\b)',         lambda m: m.group(1)+m.group(2).lower(), t)
+    return t
+
+def restore_list(text, prefix, items):
+    import re
+    def repl(m):
+        i=int(m.group(1))
+        return items[i] if 0<=i<len(items) else m.group(0)
+    text=re.sub(rf"⟦{prefix}(\d+)⟧", repl, text)
+    text=re.sub(rf"__{prefix}(\d+)__", repl, text)
+    text=re.sub(rf"\b{prefix}(\d+)\b", repl, text)
+    text=re.sub(rf"{prefix}(\d+)", repl, text)
+    return text
+
+def _dequote_wrapped(t:str)->str:
+    t = re.sub(r"['\"“”]\s*(</?[A-Za-z0-9]+(?:\s[^>]*?)?>)\s*['\"“”]", r"\1", t)
+    t = re.sub(r"['\"“”]\s*(\{\{[^}]+\}\})\s*['\"“”]", r"\1", t)
+    t = re.sub(r"['\"“”]\s*(\{[A-Za-z0-9_]+\})\s*['\"“”]", r"\1", t)
+    t = re.sub(r"['\"“”]\s*([®™©℠])\s*['\"“”]", r"\1", t)
+    t = re.sub(r"['\"“”]\s*(#[A-Za-z0-9_ÄÖÜäöüß\.\-]+)\s*['\"“”]", r"\1", t)
+    return t
+
+def _collapse_dupe_tags(t:str)->str:
+    prev=None
+    while prev!=t:
+        prev=t
+        t=re.sub(r"<([A-Za-z0-9]+)(?:\s[^>]*)?>\s*<\1(?:\s[^>]*)?>", r"<\1>", t)
+        t=re.sub(r"</([A-Za-z0-9]+)>\s*</\1>", r"</\1>", t)
+    return t
+
+TM = {}; NEVER_TERMS=set()
+
+def load_tm():
+    try:
+        with open("tm.csv","r",encoding="utf-8") as f:
+            r=csv.reader(f)
+            for row in r:
+                if len(row)>=4:
+                    src_lang,tgt_lang,src_txt,tgt_txt=row[0],row[1],row[2],row[3]
+                    TM[f"{src_lang}|{tgt_lang}|{src_txt}"]={"src":src_txt,"tgt":tgt_txt}
+    except FileNotFoundError:
+        pass
+    return len(TM)
+
+def load_glossary():
+    try:
+        with open("glossary.json","r",encoding="utf-8") as f:
+            data=json.load(f)
+            NEVER_TERMS.update(data.get("never_translate",[]))
+    except FileNotFoundError:
+        pass
+    return len(NEVER_TERMS)
+
+load_tm(); load_glossary()
+
+def tm_lookup_exact(src,tgt,text):
+    k=f"{src}|{tgt}|{text}"
+    if k in TM: return {"tgt": TM[k]["tgt"], "provenance":{"tm":"exact","engine":"tm"}}
+    return None
+
+def tm_lookup_fuzzy(src,tgt,text):
+    try:
+        from rapidfuzz import fuzz
+    except ImportError:
+        return None
+    q=text.lower(); L=len(q)
+    cands=[v for k,v in TM.items() if k.startswith(f"{src}|{tgt}|")]
+    if not cands: return None
+    pool=[it for it in cands if 0.8*L<=len(it["src"])<=1.2*L] or cands
+    best=None; best_s=0.0
+    for it in pool:
+        s=fuzz.ratio(q, it["src"].lower())/100.0
+        if s>best_s: best_s, best = s, it
+    if best and best_s>=TM_SOFT_THRESHOLD:
+        return {"tgt": best["tgt"], "provenance":{"tm":"fuzzy","engine":"tm","score":round(best_s,3)}}
+    return None
+
+def call_backend(url, src, tgt, text):
+    data=json.dumps({"source":src,"target":tgt,"text":text}).encode("utf-8")
+    req=urllib.request.Request(url, method="POST", headers={"Content-Type":"application/json","Connection":"close"}, data=data)
+    try:
+        with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
+            body=r.read().decode("utf-8","ignore")
+    except urllib.error.HTTPError as e:
+        try: err=e.read().decode("utf-8","ignore")
+        except Exception: err=""
+        raise HTTPException(status_code=502, detail={"backend_status": e.code, "backend_body": err})
+    except urllib.error.URLError as e:
+        raise HTTPException(status_code=502, detail=f"backend_unreachable: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"backend_error: {e}")
+    try:
+        j=json.loads(body) if body else {}
+    except Exception:
+        raise HTTPException(status_code=502, detail={"backend_status": "invalid_json", "backend_body": body[:500]})
+    return j.get("translated_text","")
+
+def _direct_pair(src,tgt):
+    s=(src or '').lower()[:2]; t=(tgt or '').lower()[:2]
+    return (s=="en") or (t=="en")
+
+def normalize_colons(t:str)->str:
+    t=re.sub(r"(?<=\d)\s*:\s*(?=\d{2}\b)", ":", t)
+    t=re.sub(r"(?<!\d)\s*:\s*(?!\d)", ": ", t)
+    return t
+
+def restore_freezes(out, ph_hits, tag_hits, sb_hits, emj_hits, sym_hits, hash_hits):
+    out = restore_list(out,"HASH",hash_hits)
+    out = restore_list(out,"SYM", sym_hits)
+    out = restore_list(out,"EMJ", emj_hits)
+    out = restore_list(out,"TAG", tag_hits)
+    out = restore_list(out,"SB",  sb_hits)
+    out = restore_list(out,"PH",  ph_hits)
+    return out
+
+def _singlecall_masked(src_lang, tgt_lang, text):
+    ph_hits=[]; tag_hits=[]; sb_hits=[]; emj_hits=[]; sym_hits=[]; hash_hits=[]
+    def r_ph(m):  i=len(ph_hits);  ph_hits.append(m.group(0));   return f"⟦PH{i}⟧"
+    def r_tag(m): i=len(tag_hits); tag_hits.append(m.group(0));  return f"⟦TAG{i}⟧"
+    def r_sb(m):  i=len(sb_hits);  sb_hits.append(m.group(0));   return f"⟦SB{i}⟧"
+    def r_emj(m): i=len(emj_hits); emj_hits.append(m.group(0));  return f"⟦EMJ{i}⟧"
+    def r_sym(m): i=len(sym_hits); sym_hits.append(m.group(0));  return f"⟦SYM{i}⟧"
+    def r_hash(m):i=len(hash_hits);hash_hits.append(m.group(0)); return f"⟦HASH{i}⟧"
+    t = PH_RE.sub(r_ph, text)
+    t = TAG_FULL_RE.sub(r_tag, t)
+    t = SINGLE_PH_RE.sub(r_sb, t)
+    t = EMOJI_RE.sub(r_emj, t)
+    t = SYMBOL_RE.sub(r_sym, t)
+    t = HASHTAG_RE.sub(r_hash, t)
+    out = call_backend(BACKEND, src_lang, tgt_lang, t)
+    out = restore_freezes(out, ph_hits, tag_hits, sb_hits, emj_hits, sym_hits, hash_hits)
+    out = _dequote_wrapped(out)
+    out = _collapse_dupe_tags(out)
+    out = _dequote_wrapped(out)
+    out = re.sub(r"\s+([,.;!?])", r"\1", out)
+    out = normalize_colons(out)
+    out = re.sub(r"\s{2,}", " ", out).strip()
+    out = fix_sentence_case_en(out)
+    out = cp1252_cleanup(out)
+    return out, "self_host_mt"
+
+def _ensure_anchor_text(src_text:str, out_text:str, src_lang:str, tgt_lang:str)->str:
+    src_anchors=list(re.finditer(r'(<a\b[^>]*>)(.*?)(</a>)', src_text, flags=re.I|re.S))
+    out_anchors=list(re.finditer(r'(<a\b[^>]*>)(.*?)(</a>)', out_text, flags=re.I|re.S))
+    n=min(len(src_anchors), len(out_anchors))
+    if n==0: return out_text
+    out=list(out_text)
+    for idx in range(n-1, -1, -1):
+        s_m=src_anchors[idx]; o_m=out_anchors[idx]
+        inner_src=s_m.group(2).strip()
+        inner_out=o_m.group(2).strip()
+        if inner_src and (not inner_out or inner_out.strip('"“”')==''):
+            try:
+                fix,_ = _singlecall_masked(src_lang, tgt_lang, inner_src)
+            except Exception:
+                fix = inner_src
+            start=o_m.start(2); end=o_m.end(2)
+            out[start:end]=list(fix)
+    return ''.join(out)
+
+def _pivot_via_en(src, tgt, text):
+    outs=[]
+    for sent in sentence_split(text):
+        mid,_ = _singlecall_masked(src, "en", sent)
+        o,_   = _singlecall_masked("en", tgt, mid)
+        outs.append(o)
+    return " ".join(outs)
+
+class Payload(BaseModel):
+    source: str
+    target: str
+    text: str
+
+@app.get("/health")
+def health():
+    base = BACKEND.rsplit("/",1)[0] if BACKEND.endswith("/translate") else BACKEND
+    ok=False
+    try:
+        with urllib.request.urlopen(urllib.request.Request(f"{base}/health", headers={"Connection":"close"}), timeout=3) as r:
+            j=json.loads(r.read().decode("utf-8"))
+            ok=bool(j.get("ok",False))
+    except Exception:
+        ok=False
+    return {"ok": True, "backend_alive": ok, "backend_url": BACKEND}
+
+@app.get("/meta")
+def meta():
+    base = BACKEND.rsplit("/",1)[0] if BACKEND.endswith("/translate") else BACKEND
+    backend_alive=False
+    try:
+        with urllib.request.urlopen(urllib.request.Request(f"{base}/health", headers={"Connection":"close"}), timeout=3) as r:
+            j=json.loads(r.read().decode("utf-8"))
+            backend_alive=bool(j.get("ok",False))
+    except Exception:
+        backend_alive=False
+    return {
+        "engine":"Anni","role":"Guard",
+        "tm_entries": len(TM),
+        "tm_soft_threshold": TM_SOFT_THRESHOLD,
+        "provider_configured": bool(PROVIDER),
+        "never_terms": len(NEVER_TERMS),
+        "backend_url": BACKEND,
+        "backend_alive": backend_alive
+    }
+
+@app.post("/admin/reload")
+def admin_reload():
+    return {"ok": True, "tm_entries": load_tm(), "never_terms": load_glossary()}
+
+@app.options("/translate")
+def _cors_preflight_translate():
+    return Response(status_code=204, headers={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Allow-Headers":"content-type, x-anni-key, X-API-Key","Access-Control-Max-Age":"86400"})
+
+@app.post("/translate")
+def translate(p: Payload):
+    use_tm = not has_emoji(p.text)
+    if use_tm:
+        hit = tm_lookup_exact(p.source, p.target, p.text)
+        if hit:
+            out = cp1252_cleanup(hit["tgt"])
+            return {"translated_text": out, "provenance": hit["provenance"], "checks": check_invariants(p.text, out)}
+        hit = tm_lookup_fuzzy(p.source, p.target, p.text)
+        if hit:
+            out = cp1252_cleanup(hit["tgt"])
+            return {"translated_text": out, "provenance": hit["provenance"], "checks": check_invariants(p.text, out)}
+    paras = re.split(r'(?:\r?\n){2,}', p.text.strip())
+    out_paras=[]
+    for para in paras:
+        if _direct_pair(p.source, p.target):
+            o,_ = _singlecall_masked(p.source, p.target, para)
+        else:
+            o = _pivot_via_en(p.source, p.target, para)
+        out_paras.append(o)
+    out = "\n\n".join(out_paras).strip()
+    out = _ensure_anchor_text(p.text, out, p.source, p.target)
+    return {"translated_text": out, "provenance":{"tm":"miss","engine":"self_host_mt"}, "checks": check_invariants(p.text, out)}

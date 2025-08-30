@@ -1,0 +1,36 @@
+name: ANNI CI Smoke
+on:
+  push:
+    paths: ["anni_copy_service.py","anni_copy_gate.py","Dockerfile","requirements.txt",".github/workflows/anni-ci.yml"]
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t anni-copy-ci .
+
+      - name: Run container
+        run: docker run -d --name anni-ci -p 8094:8094 -e ANNI_ADMIN_KEY=ci-key anni-copy-ci
+
+      - name: Wait for health
+        run: |
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:8094/health && exit 0
+            sleep 1
+          done
+          echo "service not healthy"; docker logs anni-ci; exit 1
+
+      - name: /check smoke
+        run: |
+          curl -fsS -H "x-anni-key: ci-key" -H 'Content-Type: application/json'             -d '{"task":"cta","brief":{"brand_terms":["TranceLate"],"never_translate":["TranceLate"]},"variants":["Jetzt starten","Sofort prüfen","Design prüfen — kostenlos"]}'             http://127.0.0.1:8094/check | grep '"ok": true'
+
+      - name: Metrics peek
+        run: curl -fsS http://127.0.0.1:8094/metrics | head -n 5
+
+      - name: Teardown
+        if: always()
+        run: docker rm -f anni-ci || true

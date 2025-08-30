@@ -1,0 +1,16 @@
+# universal, engine-agnostic routing config
+translators:
+  self_host:
+    type: mt
+    url: http://127.0.0.1:8091/translate   # unser generischer Pre/Post-Guard + MT
+  provider_backup:
+    type: mt
+    url: https://YOUR_PROVIDER_ENDPOINT/translate  # Platzhalter, später mit Key
+
+router:
+  weights:
+    self_host: 0.95
+    provider_backup: 0.05
+  fallback: provider_backup   # bei Fehlern automatisch auf Backup
+  polish:
+    enabled: false            # LLM-Polish nur gezielt, nicht default

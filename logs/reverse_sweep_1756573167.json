@@ -1,0 +1,402 @@
+{
+  "total": 99,
+  "passed": 0,
+  "fails": [
+    {
+      "lang": "af",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "am",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ar",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ast",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "az",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ba",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "be",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "bg",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "bn",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "br",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "bs",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ca",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ceb",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "cs",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "cy",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "da",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "de",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "el",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "es",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "et",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "fa",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ff",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "fi",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "fr",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "fy",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ga",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "gd",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "gl",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "gu",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ha",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "he",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "hi",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "hr",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ht",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "hu",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "hy",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "id",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ig",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ilo",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "is",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "it",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ja",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "jv",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ka",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "kk",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "km",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "kn",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ko",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "lb",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "lg",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ln",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "lo",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "lt",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "lv",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "mg",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "mk",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ml",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "mn",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "mr",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ms",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "my",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ne",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "nl",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "no",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ns",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "oc",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "or",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "pa",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "pl",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ps",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "pt",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ro",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ru",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "sd",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "si",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "sk",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "sl",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "so",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "sq",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "sr",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ss",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "su",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "sv",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "sw",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ta",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "th",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "tl",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "tn",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "tr",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "uk",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "ur",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "uz",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "vi",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "wo",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "xh",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "yi",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "yo",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "zh",
+      "error": "HTTP Error 502: Bad Gateway"
+    },
+    {
+      "lang": "zu",
+      "error": "HTTP Error 502: Bad Gateway"
+    }
+  ]
+}

@@ -1,0 +1,178 @@
+{
+  "counts": {
+    "cases": 8,
+    "mt_tm_exact": 7,
+    "ph_ok_mt": 8,
+    "ph_ok_polish": 8,
+    "polish_kept_tm": 7,
+    "paren_issues_polish": 0
+  },
+  "latency_ms": {
+    "mt": {
+      "p50": 17.4,
+      "p95": 30.1,
+      "avg": 81.3,
+      "max": 513.0
+    },
+    "polish": {
+      "p50": 4660.1,
+      "p95": 15185.9,
+      "avg": 8406.7,
+      "max": 17528.6
+    }
+  },
+  "samples": [
+    {
+      "src": "de",
+      "tgt": "en",
+      "text": "Jetzt starten.",
+      "mt": {
+        "translated_text": "Start now.",
+        "provenance": {
+          "tm": "exact",
+          "engine": "tm"
+        }
+      },
+      "polish": {
+        "translated_text": "Start now."
+      },
+      "lat_ms": {
+        "mt": 30.1,
+        "polish": 13106.2
+      }
+    },
+    {
+      "src": "de",
+      "tgt": "en",
+      "text": "Nachricht senden.",
+      "mt": {
+        "translated_text": "Send a message.",
+        "provenance": {
+          "tm": "exact",
+          "engine": "tm"
+        }
+      },
+      "polish": {
+        "translated_text": "Send a message."
+      },
+      "lat_ms": {
+        "mt": 17.4,
+        "polish": 6550.4
+      }
+    },
+    {
+      "src": "de",
+      "tgt": "en",
+      "text": "Datei hochladen …",
+      "mt": {
+        "translated_text": "Upload file…",
+        "provenance": {
+          "tm": "exact",
+          "engine": "tm"
+        }
+      },
+      "polish": {
+        "translated_text": "Upload file…"
+      },
+      "lat_ms": {
+        "mt": 19.4,
+        "polish": 4636.5
+      }
+    },
+    {
+      "src": "de",
+      "tgt": "en",
+      "text": "Wir synchronisieren {{COUNT}} Seiten im Hintergrund. Du kannst weiterarbeiten.",
+      "mt": {
+        "translated_text": "We synchronize {{COUNT}} pages in the background. You can continue working.",
+        "provenance": {
+          "tm": "exact",
+          "engine": "tm"
+        }
+      },
+      "polish": {
+        "translated_text": "We synchronize {{COUNT}} pages in the background. You can continue working."
+      },
+      "lat_ms": {
+        "mt": 15.9,
+        "polish": 15185.9
+      }
+    },
+    {
+      "src": "de",
+      "tgt": "en",
+      "text": "Preis: 19,90 € inkl. MwSt.",
+      "mt": {
+        "translated_text": "Price: € 19.90 incl. VAT.",
+        "provenance": {
+          "tm": "miss",
+          "engine": "self_host_mt"
+        }
+      },
+      "polish": {
+        "translated_text": "Price: € 19.90 incl. VAT."
+      },
+      "lat_ms": {
+        "mt": 513.0,
+        "polish": 2384.4
+      }
+    },
+    {
+      "src": "en",
+      "tgt": "de",
+      "text": "Save changes",
+      "mt": {
+        "translated_text": "Änderungen speichern",
+        "provenance": {
+          "tm": "exact",
+          "engine": "tm"
+        }
+      },
+      "polish": {
+        "translated_text": "Änderungen speichern"
+      },
+      "lat_ms": {
+        "mt": 16.3,
+        "polish": 17528.6
+      }
+    },
+    {
+      "src": "en",
+      "tgt": "de",
+      "text": "Start now.",
+      "mt": {
+        "translated_text": "Jetzt starten.",
+        "provenance": {
+          "tm": "exact",
+          "engine": "tm"
+        }
+      },
+      "polish": {
+        "translated_text": "Jetzt starten."
+      },
+      "lat_ms": {
+        "mt": 21.4,
+        "polish": 4660.1
+      }
+    },
+    {
+      "src": "en",
+      "tgt": "de",
+      "text": "We synchronize {{COUNT}} pages in the background. You can continue working.",
+      "mt": {
+        "translated_text": "Wir synchronisieren {{COUNT}} Seiten im Hintergrund. Du kannst weiterarbeiten.",
+        "provenance": {
+          "tm": "exact",
+          "engine": "tm"
+        }
+      },
+      "polish": {
+        "translated_text": "Wir synchronisieren {{COUNT}} Seiten im Hintergrund. Du kannst weiterarbeiten."
+      },
+      "lat_ms": {
+        "mt": 16.9,
+        "polish": 3201.3
+      }
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+# UI-Microcopy
+Jetzt starten.
+Nachricht senden.
+Datei hochladen …
+
+# Produkt/Feature
+Wir synchronisieren {{COUNT}} Seiten im Hintergrund. Du kannst weiterarbeiten.
+TranceLate Pro prüft Platzhalter wie {{NAME}} und %s automatisch.
+
+# Recht/Policies
+Preis: 19,90 € inkl. MwSt.
+Deine Daten werden ausschließlich in der EU verarbeitet.

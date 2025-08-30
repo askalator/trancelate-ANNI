@@ -1,0 +1,42 @@
+{
+  "task": "headline",
+  "results": [
+    {
+      "text": "Mehrsprachig — ohne Layout-Brüche",
+      "length_ok": true,
+      "avoid_ok": true,
+      "brand_ok": true,
+      "exclaim_ok": true,
+      "coverage": 1.0,
+      "tone_fit": 1.0,
+      "cta_form_ok": null,
+      "aqs": 1.0
+    },
+    {
+      "text": "Übersetzen, ohne dein Design zu riskieren",
+      "length_ok": true,
+      "avoid_ok": true,
+      "brand_ok": true,
+      "exclaim_ok": true,
+      "coverage": 1.0,
+      "tone_fit": 1.0,
+      "cta_form_ok": null,
+      "aqs": 1.0
+    },
+    {
+      "text": "Markentreu in jeder Sprache — Governance, Preflight & TM-first superschnell jetzt sofort ausprobieren",
+      "length_ok": false,
+      "avoid_ok": true,
+      "brand_ok": true,
+      "exclaim_ok": true,
+      "coverage": 1.0,
+      "tone_fit": 1.0,
+      "cta_form_ok": null,
+      "aqs": 0.8
+    }
+  ],
+  "aggregate": {
+    "diversity_ok": true,
+    "avg_aqs": 0.933
+  }
+}

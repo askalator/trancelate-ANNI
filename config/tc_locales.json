@@ -1,0 +1,52 @@
+{
+  "locales": {
+    "ja": {
+      "formality": "polite",
+      "honorifics": true,
+      "cultural_notes": "Respectful, indirect communication preferred",
+      "marketing_style": "benefit-focused, quality-oriented"
+    },
+    "zh": {
+      "formality": "formal",
+      "honorifics": false,
+      "cultural_notes": "Direct, clear communication valued",
+      "marketing_style": "authoritative, trust-building"
+    },
+    "ko": {
+      "formality": "polite",
+      "honorifics": true,
+      "cultural_notes": "Hierarchical, respectful communication",
+      "marketing_style": "quality-focused, relationship-building"
+    },
+    "ar": {
+      "formality": "formal",
+      "honorifics": true,
+      "cultural_notes": "Respectful, relationship-oriented",
+      "marketing_style": "trust-building, community-focused"
+    },
+    "de": {
+      "formality": "formal",
+      "honorifics": false,
+      "cultural_notes": "Direct, precise, quality-focused",
+      "marketing_style": "technical, reliable, efficient"
+    },
+    "en": {
+      "formality": "casual",
+      "honorifics": false,
+      "cultural_notes": "Direct, action-oriented",
+      "marketing_style": "benefit-driven, call-to-action focused"
+    },
+    "fr": {
+      "formality": "formal",
+      "honorifics": true,
+      "cultural_notes": "Elegant, sophisticated communication",
+      "marketing_style": "luxury, quality, sophistication"
+    },
+    "es": {
+      "formality": "casual",
+      "honorifics": false,
+      "cultural_notes": "Warm, friendly, relationship-oriented",
+      "marketing_style": "emotional, community-focused"
+    }
+  }
+}

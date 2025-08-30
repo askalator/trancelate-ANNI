@@ -1,0 +1,11 @@
+{
+  "task":"cta",
+  "locale":"en-US",
+  "style_key":"informal",
+  "brief": { "key_points": ["preflight","tm-first","edge governance"] },
+  "variants": [
+    "Start now",
+    "Test now — no risk",
+    "Translate now — free forever!"
+  ]
+}

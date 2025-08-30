@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ENV=${ENV:-tl311}
+PORT_MT=${PORT_MT:-8090}
+PORT_GUARD=${PORT_GUARD:-8091}
+mkdir -p logs
+
+log(){ printf '%s %s\n' "$(date '+%H:%M:%S')" "$*"; }
+
+# Ports räumen
+lsof -tiTCP:$PORT_MT -sTCP:LISTEN 2>/dev/null | xargs -I{} kill -9 {} 2>/dev/null || true
+lsof -tiTCP:$PORT_GUARD -sTCP:LISTEN 2>/dev/null | xargs -I{} kill -9 {} 2>/dev/null || true
+
+# 1) MT starten & WARTEN bis /health OK
+log "Starte MT ($PORT_MT)…"
+conda run -n "$ENV" python -m uvicorn mt_server:app --host 127.0.0.1 --port $PORT_MT > logs/mt.log 2>&1 &
+echo $! > logs/mt.pid
+for i in {1..90}; do
+  if curl -sf http://127.0.0.1:$PORT_MT/health >/dev/null; then log "MT up"; break; fi
+  sleep 1
+  if [ "$i" -eq 90 ]; then log "❌ MT bleibt down (siehe logs/mt.log)"; exit 1; fi
+done
+
+# 2) Guard starten & WARTEN bis /health OK
+log "Starte Guard ($PORT_GUARD)…"
+conda run -n "$ENV" python -m uvicorn mt_guard:app --host 127.0.0.1 --port $PORT_GUARD > logs/mt_guard.log 2>&1 &
+echo $! > logs/mt_guard.pid
+for i in {1..60}; do
+  if curl -sf http://127.0.0.1:$PORT_GUARD/health >/dev/null; then log "Guard up"; break; fi
+  sleep 1
+  if [ "$i" -eq 60 ]; then log "❌ Guard bleibt down (siehe logs/mt_guard.log)"; exit 1; fi
+done
+
+# 3) Provider binden, bis backend_alive:true
+for i in {1..30}; do
+  curl -s -X POST http://127.0.0.1:$PORT_GUARD/admin/reload >/dev/null
+  curl -s http://127.0.0.1:$PORT_GUARD/meta | grep -q '"backend_alive":true' && { log "Backend bound"; break; }
+  sleep 1
+  if [ "$i" -eq 30 ]; then log "❌ Backend nicht gebunden"; exit 1; fi
+done
+
+# 4) Smokes (ohne HTML)
+log "Smoke A"
+curl -s -H 'Content-Type: application/json' -d '{"source":"de","target":"en","text":"Guten Morgen"}' http://127.0.0.1:$PORT_GUARD/translate && echo
+log "Smoke B (PH)"
+curl -s -H 'Content-Type: application/json' -d '{"source":"de","target":"en","text":"Nur heute: {{COUNT}} Plätze frei bei {app}!"}' http://127.0.0.1:$PORT_GUARD/translate && echo
+
+log "✅ ALL GREEN"

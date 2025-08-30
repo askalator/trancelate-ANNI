@@ -1,0 +1,46 @@
+{
+  "items": [
+    {
+      "ts": 1756408304,
+      "task": "cta",
+      "picked": [
+        "Jetzt starten",
+        "Sofort prüfen",
+        "Design prüfen — kostenlos"
+      ],
+      "input": [
+        "Jetzt starten",
+        "Sofort prüfen",
+        "Design prüfen — kostenlos"
+      ]
+    },
+    {
+      "ts": 1756408383,
+      "task": "cta",
+      "picked": [
+        "Jetzt starten",
+        "Sofort prüfen",
+        "Design prüfen — kostenlos"
+      ],
+      "input": [
+        "Jetzt starten",
+        "Sofort prüfen",
+        "Design prüfen — kostenlos"
+      ]
+    },
+    {
+      "ts": 1756408383,
+      "task": "headline",
+      "picked": [
+        "Mehrsprachig — ohne Layout-Brüche",
+        "Übersetzen, ohne dein Design zu riskieren",
+        "Markentreu in jeder Sprache"
+      ],
+      "input": [
+        "Mehrsprachig — ohne Layout-Brüche",
+        "Übersetzen, ohne dein Design zu riskieren",
+        "Markentreu in jeder Sprache"
+      ]
+    }
+  ]
+}

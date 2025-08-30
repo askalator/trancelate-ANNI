@@ -1,0 +1,7 @@
+{
+  "rtl": ["ar","he","fa","ur"],
+  "cjk": ["zh","ja","ko"],
+  "indic": ["hi","bn","ta","te","ml","mr","ur","gu","pa","or","as","ne","si"],
+  "africa": ["sw","am","yo","ha","ig","om","ti"],
+  "asia": ["zh","ja","ko","hi","bn","ta","te","ml","mr","ur","th","vi","id","ms","km","lo","si","ne","pa","gu","or","as","my","fa","he","ar","tr","az","kk","uz","ky"]
+}

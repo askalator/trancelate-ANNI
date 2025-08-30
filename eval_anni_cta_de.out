@@ -1,0 +1,42 @@
+{
+  "task": "cta",
+  "results": [
+    {
+      "text": "Sofort prüfen",
+      "length_ok": true,
+      "avoid_ok": true,
+      "brand_ok": true,
+      "exclaim_ok": true,
+      "coverage": 1.0,
+      "tone_fit": 1.0,
+      "cta_form_ok": 1.0,
+      "aqs": 1.0
+    },
+    {
+      "text": "Jetzt starten",
+      "length_ok": true,
+      "avoid_ok": true,
+      "brand_ok": true,
+      "exclaim_ok": true,
+      "coverage": 1.0,
+      "tone_fit": 1.0,
+      "cta_form_ok": 1.0,
+      "aqs": 1.0
+    },
+    {
+      "text": "Design prüfen — kostenlos",
+      "length_ok": true,
+      "avoid_ok": true,
+      "brand_ok": true,
+      "exclaim_ok": true,
+      "coverage": 1.0,
+      "tone_fit": 1.0,
+      "cta_form_ok": 1.0,
+      "aqs": 1.0
+    }
+  ],
+  "aggregate": {
+    "diversity_ok": true,
+    "avg_aqs": 1.0
+  }
+}

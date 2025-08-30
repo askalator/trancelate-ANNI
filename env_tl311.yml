@@ -1,0 +1,7 @@
+name: tl311
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pytorch[version='>=2.6,<2.7']
+prefix: /Users/marisalanger/miniforge3/envs/tl311

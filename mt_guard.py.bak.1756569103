@@ -1,0 +1,176 @@
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import re, os, json, urllib.request, urllib.error
+
+BACKEND = os.environ.get("MT_BACKEND","http://127.0.0.1:8093")
+TIMEOUT = int(os.environ.get("MT_TIMEOUT","60"))
+ANNI_MAX_NEW_TOKENS = int(os.environ.get("ANNI_MAX_NEW_TOKENS","512"))
+
+app = FastAPI()
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*", "x-anni-key", "X-API-Key", "content-type"])
+
+@app.exception_handler(Exception)
+async def _err_handler(request, exc):
+    import traceback
+    return JSONResponse(status_code=500, content={"ok": False, "error": str(exc), "trace": traceback.format_exc()})
+
+PH_RE        = re.compile(r"\{\{[^}]+\}\}")
+SINGLE_PH_RE = re.compile(r"\{[A-Za-z0-9_]+\}")
+NUM_RE       = re.compile(r"\d+[.,]?\d*")
+TAG_RE       = re.compile(r"</?([A-Za-z0-9]+)[^>]*>")
+TAG_FULL_RE  = re.compile(r"(</?[A-Za-z0-9]+(?:\s[^>]*?)?>)")
+AMPM_RE      = re.compile(r"\b([1-9]|1[0-2])\s*(a\.?m\.?|p\.?m\.?)\b", re.I)
+EMOJI_RE     = re.compile('[\u2600-\u27BF\uFE0F\U0001F1E6-\U0001F1FF\U0001F300-\U0001FAFF]')
+SYMBOL_RE    = re.compile(r'[®™©℠]')
+HASHTAG_RE   = re.compile(r'#[A-Za-z0-9_ÄÖÜäöüß\.\-]+')
+URL_RE       = re.compile(r'((?:https?|ftp)://[^\s"<>]+|mailto:[^\s"<>]+)')
+
+def has_emoji(t:str)->bool:
+    try: return bool(EMOJI_RE.search(t or ""))
+    except Exception: return False
+
+def digits_only(s): return re.sub(r"\D","",s or "")
+def tags(sig): return [m.group(0).lower().replace(" ","") for m in TAG_RE.finditer(sig)]
+
+def numbers_ok(src:str, out:str)->bool:
+    out_dig = digits_only(out)
+    src_nums = NUM_RE.findall(src)
+    for n in src_nums:
+        if digits_only(n) not in out_dig:
+            break
+    else:
+        return True
+    had_ampm=False
+    parts = re.findall(r"\d{1,4}", out)
+    present = lambda x: x in out_dig or x in parts
+    for m in AMPM_RE.finditer(src):
+        had_ampm=True
+        val=int(m.group(1)); mer=m.group(2).lower()
+        if 'p' in mer and 1<=val<=11:
+            if not (present(str(val)) or present(str(val+12))): return False
+        else:
+            if not present(str(val)): return False
+    return had_ampm
+
+def check_invariants(src:str, out:str):
+    ph_ok  = all(p in out for p in PH_RE.findall(src))
+    num_ok = numbers_ok(src, out)
+    html_ok= sorted(tags(src)) == sorted(tags(out))
+    paren_ok = True
+    src_len=len(src); ratio=(len(out)+1)/(src_len+1)
+    len_ok = (0.4 <= ratio <= 4.0) if src_len < 20 else (0.5 <= ratio <= 2.2)
+    ok = ph_ok and num_ok and html_ok and paren_ok and len_ok
+    return {"ok": ok, "ph_ok": ph_ok, "num_ok": num_ok, "html_ok": html_ok, "paren_ok": paren_ok, "len_ratio": round(ratio,2)}
+
+def cp1252_cleanup(t:str)->str:
+    return t.replace("Â©","©").replace("Â®","®").replace("Â·","·").replace("Â","")
+
+def backend_translate(url, src, tgt, text):
+    endpoint = url if url.endswith("/translate") else (url.rstrip("/") + "/translate")
+    payload = {"source":src,"target":tgt,"text":text,"max_new_tokens": int(os.environ.get("ANNI_MAX_NEW_TOKENS","512"))}
+    data=json.dumps(payload).encode("utf-8")
+    req=urllib.request.Request(endpoint, method="POST", headers={"Content-Type":"application/json","Connection":"close"}, data=data)
+    try:
+        with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
+            body=r.read().decode("utf-8","ignore")
+    except urllib.error.HTTPError as e:
+        try: err_body=e.read().decode("utf-8","ignore")
+        except Exception: err_body=""
+        raise HTTPException(status_code=502, detail={"backend_status": e.code, "backend_body": err_body})
+    except urllib.error.URLError as e:
+        raise HTTPException(status_code=502, detail=f"backend_unreachable: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"backend_error: {e}")
+    try:
+        j=json.loads(body) if body else {}
+    except Exception:
+        raise HTTPException(status_code=502, detail={"backend_status": "invalid_json", "backend_body": body[:500]})
+    return j.get("translated_text","")
+
+FREEZE_PAT = re.compile(r"(\{\{[^}]+\}\}|\{[A-Za-z0-9_]+\}|</?[A-Za-z0-9]+(?:\s[^>]*?)?>|#[A-Za-z0-9_ÄÖÜäöüß\.\-]+|[\u2600-\u27BF\uFE0F\U0001F1E6-\U0001F1FF\U0001F300-\U0001FAFF]|[®™©℠])")
+
+def safe_colon_spacing(t:str)->str:
+    slots=[]
+    def hide(m):
+        slots.append(m.group(0))
+        return f'⟪URL{len(slots)-1}⟫'
+    t = URL_RE.sub(hide, t)
+    t = re.sub(r"(?<=\d)\s*:\s*(?=\d{2}\b)", ":", t)
+    t = re.sub(r"(?<!\d)\s*:\s*(?!\d)", ": ", t)
+    def unhide(m):
+        i=int(m.group(1))
+        return slots[i] if 0<=i<len(slots) else m.group(0)
+    t = re.sub(r'⟪URL(\d+)⟫', unhide, t)
+    return t
+
+def _segmentwise(src_lang, tgt_lang, text):
+    parts=[]; last=0
+    for m in FREEZE_PAT.finditer(text):
+        if m.start()>last: parts.append(("text", text[last:m.start()]))
+        parts.append(("freeze", m.group(0))); last=m.end()
+    if last<len(text): parts.append(("text", text[last:]))
+
+    outs=[]
+    for typ, chunk in parts:
+        if typ=="freeze":
+            outs.append(chunk)
+        else:
+            frag = chunk if chunk.strip() else chunk
+            if not frag.strip():
+                outs.append(frag); continue
+            if src_lang[:2]=="en" or tgt_lang[:2]=="en":
+                trans = backend_translate(BACKEND, src_lang, tgt_lang, frag)
+            else:
+                mid = backend_translate(BACKEND, src_lang, "en", frag)
+                trans = backend_translate(BACKEND, "en", tgt_lang, mid)
+            outs.append(trans)
+    out="".join(outs)
+    out = re.sub(r"\s+([,.;!?])", r"\1", out)
+    out = safe_colon_spacing(out)
+    out = re.sub(r"(</[A-Za-z0-9]+>)(?=[A-Za-z0-9])", r"\1 ", out)
+    out = re.sub(r"\s{2,}", " ", out).strip()
+    out = cp1252_cleanup(out)
+    return out
+
+def _ensure_anchor_text(src_text:str, out_text:str, src_lang:str, tgt_lang:str)->str:
+    src_anchors=list(re.finditer(r'(<a\b[^>]*>)(.*?)(</a>)', src_text, flags=re.I|re.S))
+    out_anchors=list(re.finditer(r'(<a\b[^>]*>)(.*?)(</a>)', out_text, flags=re.I|re.S))
+    n=min(len(src_anchors), len(out_anchors))
+    if n==0: return out_text
+    out=list(out_text)
+    for idx in range(n-1, -1, -1):
+        s_m=src_anchors[idx]; o_m=out_anchors[idx]
+        inner_src=s_m.group(2).strip()
+        inner_out=o_m.group(2).strip()
+        if inner_src and (not inner_out or inner_out.strip('"“”')==''):
+            try: fix = _segmentwise(src_lang, tgt_lang, inner_src)
+            except Exception: fix = inner_src
+            start=o_m.start(2); end=o_m.end(2)
+            out[start:end]=list(fix)
+    return ''.join(out)
+
+class Payload(BaseModel):
+    source: str
+    target: str
+    text: str
+
+@app.get("/meta")
+def meta():
+    backend_alive=False
+    try:
+        with urllib.request.urlopen(urllib.request.Request(BACKEND.rstrip('/')+'/health', headers={"Connection":"close"}), timeout=3) as r:
+            j=json.loads(r.read().decode("utf-8"))
+            backend_alive=bool(j.get("ok",False))
+    except Exception:
+        backend_alive=False
+    return {"engine":"Anni","role":"Guard","tm_entries":0,"tm_soft_threshold":0.9,"provider_configured":False,"never_terms":0,"backend_url":BACKEND,"backend_alive":backend_alive}
+
+@app.post("/translate")
+def translate(p: Payload):
+    paras = re.split(r'(?:\r?\n){2,}', p.text.strip())
+    out_paras=[_segmentwise(p.source, p.target, para) for para in paras]
+    out = "\n\n".join(out_paras).strip()
+    out = _ensure_anchor_text(p.text, out, p.source, p.target)
+    return {"translated_text": out, "provenance":{"tm":"miss","engine":"self_host_mt"}, "checks": check_invariants(p.text, out)}

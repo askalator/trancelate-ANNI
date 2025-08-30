@@ -1,0 +1,39 @@
+{
+  "brand": "TranceLate",
+  "voice": {
+    "principles": [
+      "klar, freundlich, duzend",
+      "keine unnötigen Anglizismen",
+      "präzise Verben, kurze Sätze"
+    ],
+    "do": [
+      "Sag konkret, was passiert.",
+      "Hebe Nutzen vor Aufwand hervor.",
+      "English: use sentence case; avoid Title Case for common nouns mid-sentence. Keep HTML tags and placeholders unchanged."
+    ],
+    "dont": [
+      "Kein Marketing-Wortsalat.",
+      "Keine vagen Versprechen ohne Zahl."
+    ]
+  },
+  "examples": [
+    {
+      "before": "Jetzt klicken",
+      "after": "Jetzt starten"
+    },
+    {
+      "before": "Ihr Konto wurde erstellt",
+      "after": "Dein Konto steht – leg los!"
+    },
+    {
+      "before": "Submit",
+      "after": "Senden"
+    }
+  ],
+  "style_fingerprint": {
+    "du_sie": "du",
+    "formality": "informal",
+    "marketing_score": 0.7,
+    "technical_score": 0.3
+  }
+}

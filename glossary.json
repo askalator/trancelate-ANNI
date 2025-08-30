@@ -1,0 +1,14 @@
+{
+  "never_translate": [
+    "TranceLate Pro",
+    "OrgCard",
+    "RAG",
+    "CTA"
+  ],
+  "placeholders": [
+    "{{COUNT}}",
+    "{{NAME}}",
+    "{amount}",
+    "%s"
+  ]
+}

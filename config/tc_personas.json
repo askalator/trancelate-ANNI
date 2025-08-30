@@ -1,0 +1,36 @@
+{
+  "personas": {
+    "ogilvy": {
+      "style": "clear, precise, elegant, subtle, benefit-focused",
+      "description": "David Ogilvy style - clear, precise, elegant copy that focuses on benefits"
+    },
+    "halbert": {
+      "style": "bold, direct-response, urgency, proof, compelling",
+      "description": "Gary Halbert style - bold, direct-response copy with urgency and proof"
+    },
+    "default": {
+      "style": "clear, professional, balanced",
+      "description": "Default professional style"
+    },
+    "direct-response": {
+      "style": "urgent, action-oriented, benefit-driven, compelling",
+      "description": "Direct response marketing style"
+    },
+    "brand-warm": {
+      "style": "friendly, approachable, trustworthy, conversational",
+      "description": "Warm, brand-friendly style"
+    },
+    "luxury": {
+      "style": "sophisticated, exclusive, premium, refined",
+      "description": "Luxury brand style"
+    },
+    "casual": {
+      "style": "relaxed, informal, friendly, conversational",
+      "description": "Casual, informal style"
+    },
+    "authoritative": {
+      "style": "confident, expert, trustworthy, commanding",
+      "description": "Authoritative, expert style"
+    }
+  }
+}

@@ -1,0 +1,13 @@
+services:
+  anni-approve:
+    build:
+      context: .
+      dockerfile: Dockerfile.approve
+    environment:
+      ANNI_ADMIN_KEY: ${ANNI_ADMIN_KEY}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
+      APPROVE_PORT: "8095"
+    ports:
+      - "8095:8095"
+    restart: unless-stopped

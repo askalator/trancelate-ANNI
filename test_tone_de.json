@@ -1,0 +1,11 @@
+{
+  "task":"cta",
+  "locale":"de-DE",
+  "style_key":"informal",
+  "brief":{"key_points":["Preflight","TM-first","Edge-Governance"]},
+  "variants":[
+    "Du startest jetzt",
+    "Starte jetzt",
+    "Jetzt starten"
+  ]
+}

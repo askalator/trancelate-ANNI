@@ -1,0 +1,44 @@
+{
+  "profiles": {
+    "marketing": {
+      "cta": {
+        "ja": "今すぐチェック",
+        "de": "Jetzt entdecken", 
+        "en": "Shop now",
+        "zh": "立即购买",
+        "ko": "지금 구매",
+        "ar": "تسوق الآن",
+        "fr": "Acheter maintenant",
+        "es": "Comprar ahora",
+        "it": "Acquista ora",
+        "pt": "Comprar agora"
+      },
+      "emoji": "✨",
+      "style": "persuasive, benefit-focused, action-oriented"
+    },
+    "social": {
+      "emoji": "🔥",
+      "style": "casual, engaging, shareable",
+      "cta": {
+        "ja": "シェアしよう",
+        "de": "Teilen",
+        "en": "Share this",
+        "zh": "分享",
+        "ko": "공유하기",
+        "ar": "شارك هذا",
+        "fr": "Partager",
+        "es": "Compartir",
+        "it": "Condividi",
+        "pt": "Compartilhar"
+      }
+    },
+    "technical": {
+      "style": "precise, detailed, professional",
+      "emoji": "⚙️"
+    },
+    "creative": {
+      "style": "imaginative, expressive, artistic",
+      "emoji": "🎨"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "stages": [
+    "tc_core",
+    "post_profile",
+    "policy_check",
+    "degrade"
+  ]
+}

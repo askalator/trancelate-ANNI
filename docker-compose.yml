@@ -1,0 +1,18 @@
+services:
+  anni-copy:
+    build: .
+    ports:
+      - "8094:8094"
+    env_file:
+      - ".env.anni"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD","curl","-fsS","http://127.0.0.1:8094/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
