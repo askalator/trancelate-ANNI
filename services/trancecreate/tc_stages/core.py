@@ -49,18 +49,24 @@ class TcCoreStage(Stage):
                 seed
             )
             
-            # Update context
-            ctx['text'] = transcreated_text
-            if 'trace' not in ctx:
-                ctx['trace'] = {}
-            ctx['trace']['tc_model'] = tc_model
+            # ensure context carries all three views
+            ctx["baseline_text"] = baseline_text
+            ctx["tc_candidate_text"] = transcreated_text
+            # important: keep candidate in ctx["text"] for downstream stages;
+            # do NOT overwrite with baseline here
+            ctx["text"] = transcreated_text
+            t = ctx.setdefault("trace", {})
+            t["tc_equal_baseline"] = (transcreated_text == baseline_text)
+            t["tc_model"] = tc_model
             
         except Exception as e:
             # On error, keep baseline and add error reason
+            ctx["baseline_text"] = baseline_text
+            ctx["tc_candidate_text"] = baseline_text
             ctx['text'] = baseline_text
-            if 'trace' not in ctx:
-                ctx['trace'] = {}
-            ctx['trace']['tc_model'] = 'error'
+            t = ctx.setdefault("trace", {})
+            t["tc_equal_baseline"] = True
+            t['tc_model'] = 'error'
             if 'degrade_reasons' not in ctx:
                 ctx['degrade_reasons'] = []
             ctx['degrade_reasons'].append(f"tc_core_error:{str(e)}")
@@ -161,39 +167,44 @@ class PolicyCheckStage(Stage):
     
     def run(self, ctx: Ctx) -> Ctx:
         """Check policies and invariants"""
-        baseline_text = ctx.get('baseline', '')
-        transcreated_text = ctx.get('text', '')
-        policies = ctx.get('policies', {})
+        original = ctx.get("original_text", "")
+        cand = ctx.get("text", "")
         
-        if not baseline_text or not transcreated_text:
-            return ctx
+        # Import compute_char_ratio from tc_pipeline
+        import sys
+        sys.path.append(".")
+        from tc_pipeline import compute_char_ratio
         
-        degrade_reasons = []
+        ratio = compute_char_ratio(original, cand)
+        t = ctx.setdefault("trace", {})
+        t["tc_char_ratio"] = ratio
         
-        # Check max change ratio
-        max_change_ratio = policies.get('max_change_ratio', 0.25)
-        if max_change_ratio > 0:
-            change_ratio = self._calculate_change_ratio(baseline_text, transcreated_text)
-            if change_ratio > max_change_ratio:
-                degrade_reasons.append("max_change_ratio_exceeded")
+        pol = (ctx.get("policies") or {})
+        thr = float(pol.get("max_change_ratio", 0.25))
+        EPS = 1e-6
+        
+        # WICHTIG: nur wenn ratio wirklich über thr liegt
+        if (ratio - thr) > EPS:
+            (ctx.setdefault("degrade_reasons", [])).append("max_change_ratio_exceeded")
+        else:
+            # sicherstellen, dass der Grund NICHT versehentlich vorhanden bleibt
+            dr = ctx.setdefault("degrade_reasons", [])
+            ctx["degrade_reasons"] = [r for r in dr if r != "max_change_ratio_exceeded"]
         
         # Check forbidden terms
-        forbidden_terms = policies.get('forbidden_terms', [])
+        forbidden_terms = pol.get("forbidden_terms", [])
         for term in forbidden_terms:
-            if term.lower() in transcreated_text.lower():
-                degrade_reasons.append(f"forbidden_term:{term}")
+            if term.lower() in cand.lower():
+                ctx.setdefault("degrade_reasons", []).append(f"forbidden_term:{term}")
         
         # Check preserved elements
-        preserve_list = policies.get('preserve', [])
+        preserve_list = pol.get("preserve", [])
         if preserve_list:
-            if not self._check_preserved_elements(baseline_text, transcreated_text, preserve_list):
-                degrade_reasons.append("invariants_failed")
+            if not self._check_preserved_elements(original, cand, preserve_list):
+                ctx.setdefault("degrade_reasons", []).append("invariants_failed")
         
-        # Update context
-        if degrade_reasons:
-            if 'degrade_reasons' not in ctx:
-                ctx['degrade_reasons'] = []
-            ctx['degrade_reasons'].extend(degrade_reasons)
+        # Doppelte Gründe generell vermeiden
+        ctx["degrade_reasons"] = list(dict.fromkeys(ctx["degrade_reasons"]))
         
         return ctx
     

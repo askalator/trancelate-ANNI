@@ -2,6 +2,11 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from transformers import M2M100ForConditionalGeneration, M2M100Tokenizer
 import torch, os
+import sys
+
+# Import shared functionality
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+from libs.trance_common import app_version
 
 app = FastAPI()
 tok=None; mdl=None
@@ -28,9 +33,9 @@ class Req(BaseModel):
 def health():
     try:
         ensure_loaded()
-        return {"ok":True,"model":"m2m100_418M","ready":True}
+        return {"ok":True,"model":"m2m100_418M","ready":True, **app_version()}
     except Exception as e:
-        return {"ok":False,"error":str(e),"ready":False}
+        return {"ok":False,"error":str(e),"ready":False, **app_version()}
 
 @app.post("/translate")
 def translate(r:Req):

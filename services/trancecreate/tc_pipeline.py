@@ -4,6 +4,16 @@ Modular, configurable pipeline system with hot-reload capability
 """
 
 from typing import Dict, Any, List, Protocol, Tuple
+
+def compute_char_ratio(a: str, b: str) -> float:
+    try:
+        import difflib
+        s = difflib.SequenceMatcher(a=a or "", b=b or "")
+        # 1 - Ähnlichkeit ≈ Änderungsanteil
+        return max(0.0, min(1.0, 1.0 - s.ratio()))
+    except Exception:
+        la, lb = len(a or ""), len(b or "")
+        return 0.0 if la == lb else abs(lb - la) / max(1, la)
 import json
 import os
 import time
@@ -24,6 +34,35 @@ class Stage(Protocol):
         ...
 
 
+def stage_registry():
+    from tc_stages.core import TcCoreStage, ProfileStage, PolicyCheckStage, DegradeStage
+    reg = {
+        "tc_core": TcCoreStage,
+        "post_profile": ProfileStage,
+        "policy_check": PolicyCheckStage,
+        "degrade": DegradeStage,
+    }
+    try:
+        from tc_stages.terms import TerminologyStage
+        reg["terminology"] = TerminologyStage
+    except Exception:
+        pass
+    try:
+        from tc_stages.claim_fit import ClaimFitStage
+        reg["claim_fit"] = ClaimFitStage
+    except Exception:
+        pass
+    return reg
+
+
+def build_pipeline(stage_names: List[str]) -> List[Stage]:
+    reg = stage_registry()
+    unknown = [s for s in stage_names if s not in reg]
+    if unknown:
+        raise ValueError(f"Unknown stages: {unknown}")
+    return [reg[s]() for s in stage_names]
+
+
 class Pipeline:
     """Pipeline manager with hot-reload capability"""
     
@@ -32,7 +71,7 @@ class Pipeline:
         self.stages: List[Stage] = []
         self.last_mtime = 0
         self.stage_registry: Dict[str, type] = {}
-        self._load_pipeline()
+        # Don't load pipeline in __init__ - wait for stages to be registered
     
     def register_stage(self, stage_class: type):
         """Register a stage class in the registry"""

@@ -1,0 +1,12 @@
+{
+  "default": {
+    "units": "graphemes",
+    "fit_to_source": true,
+    "ratio": 1.0,
+    "ellipsis": false,
+    "max_iterations": 3,
+    "breakpoints": ["\\s+", "\\u2009", "\\u200A", "-", "–", "—", "/", "·", ":", ";", ","],
+    "drop_parentheticals": true,
+    "drop_trailing_fragments": true
+  }
+}

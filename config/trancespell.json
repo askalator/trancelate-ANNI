@@ -1,0 +1,29 @@
+{
+  "dictionaries": {
+    "de": {
+      "aff": "/usr/local/share/hunspell/de_DE.aff",
+      "dic": "/usr/local/share/hunspell/de_DE.dic"
+    },
+    "en": {
+      "aff": "/usr/local/share/hunspell/en_US.aff",
+      "dic": "/usr/local/share/hunspell/en_US.dic"
+    }
+  },
+  "hunspell_paths": [
+    "/usr/share/hunspell",
+    "/usr/local/share/hunspell",
+    "/Library/Spelling",
+    "/opt/homebrew/share/hunspell"
+  ],
+  "aliases": {
+    "de-DE": "de",
+    "en-US": "en",
+    "iw": "he",
+    "in": "id",
+    "pt-BR": "pt",
+    "zh-CN": "zh",
+    "zh-TW": "zh"
+  },
+  "max_suggestions": 5,
+  "timeout_ms": 8000
+}

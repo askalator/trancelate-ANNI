@@ -18,9 +18,13 @@ from pydantic import BaseModel, Field, validator
 import difflib
 from pathlib import Path
 
+# Import shared functionality
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+from libs.trance_common import mask, unmask, normalize, json_get, json_post, check_invariants, t, push, app_version
+
 # Import pipeline infrastructure
-from tc_pipeline import Pipeline, Ctx
-from tc_stages import TcCoreStage, ProfileStage, PolicyCheckStage, DegradeStage
+from tc_pipeline import Pipeline, Ctx, build_pipeline, stage_registry
+from tc_stages import TcCoreStage, ProfileStage, PolicyCheckStage, DegradeStage, TerminologyStage
 
 # FastAPI App
 app = FastAPI(
@@ -35,9 +39,18 @@ pipeline.register_stage(TcCoreStage)
 pipeline.register_stage(ProfileStage)
 pipeline.register_stage(PolicyCheckStage)
 pipeline.register_stage(DegradeStage)
+pipeline.register_stage(TerminologyStage)
 
-# Reload pipeline after registering stages
-pipeline._load_pipeline()
+# Load initial pipeline configuration
+PIPELINE_FILE = "config/tc_pipeline.json"
+try:
+    with open(PIPELINE_FILE, 'r') as f:
+        config = json.load(f)
+    PIPELINE_NAMES = config.get("stages", ["tc_core", "post_profile", "policy_check", "degrade"])
+except Exception:
+    PIPELINE_NAMES = ["tc_core", "post_profile", "policy_check", "degrade"]
+
+PIPELINE = build_pipeline(PIPELINE_NAMES)
 
 # CORS
 app.add_middleware(
@@ -394,7 +407,7 @@ def calculate_diffs(baseline: str, transcreated: str) -> Dict[str, Any]:
 @app.get("/health")
 async def health():
     """Health check endpoint"""
-    return {"ok": True, "service": "TranceCreate", "version": "1.2.0"}
+    return {"ok": True, "service": "TranceCreate", **app_version()}
 
 @app.get("/profiles")
 async def get_profiles():
@@ -408,7 +421,11 @@ async def get_profiles():
 @app.get("/pipeline")
 async def get_pipeline():
     """Get current pipeline configuration"""
-    return pipeline.get_config()
+    return {
+        "stages": [{"name": s.name} for s in PIPELINE],
+        "available": sorted(list(stage_registry().keys())),
+        "mtime": int(os.path.getmtime(PIPELINE_FILE)) if os.path.exists(PIPELINE_FILE) else 0
+    }
 
 @app.put("/pipeline")
 async def update_pipeline(request: Dict[str, Any]):
@@ -418,18 +435,28 @@ async def update_pipeline(request: Dict[str, Any]):
     if not isinstance(stages, list):
         raise HTTPException(status_code=400, detail="stages must be a list")
     
-    # Validate stage names
-    known_stages = ["tc_core", "post_profile", "policy_check", "degrade"]
-    unknown_stages = [s for s in stages if s not in known_stages]
-    if unknown_stages:
-        raise HTTPException(status_code=400, detail=f"Unknown stages: {unknown_stages}")
+    # Validate stage names using build_pipeline
+    try:
+        _ = build_pipeline(stages)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     
-    # Update pipeline
-    success = pipeline.update_config(stages)
-    if not success:
-        raise HTTPException(status_code=500, detail="Failed to update pipeline configuration")
+    # Save to file
+    config = {"stages": stages}
+    os.makedirs(os.path.dirname(PIPELINE_FILE), exist_ok=True)
+    with open(PIPELINE_FILE, 'w') as f:
+        json.dump(config, f, indent=2)
     
-    return pipeline.get_config()
+    # Update global pipeline
+    global PIPELINE_NAMES, PIPELINE
+    PIPELINE_NAMES = stages
+    PIPELINE = build_pipeline(stages)
+    
+    return {
+        "stages": [{"name": s.name} for s in PIPELINE],
+        "available": sorted(list(stage_registry().keys())),
+        "mtime": int(os.path.getmtime(PIPELINE_FILE))
+    }
 
 @app.post("/transcreate", response_model=TranscreateResponse)
 async def transcreate(request: TranscreateRequest):
@@ -461,7 +488,9 @@ async def transcreate(request: TranscreateRequest):
         "source": request.source,
         "target": request.target,
         "baseline": baseline_text,
+        "baseline_text": baseline_text,  # Also set baseline_text for tc_core
         "text": baseline_text,  # Start with baseline
+        "original_text": request.text,  # Store original text for policy checks
         "profile": request.profile,
         "persona": request.persona,
         "level": request.level,
@@ -473,7 +502,8 @@ async def transcreate(request: TranscreateRequest):
     
     # Step 4: Run pipeline
     try:
-        ctx = pipeline.run(ctx)
+        for stage in PIPELINE:
+            ctx = stage.run(ctx)
         tc_latency = (time.time() - tc_start_time) * 1000
     except Exception as e:
         # Fail-closed: return baseline if pipeline fails
@@ -506,8 +536,24 @@ async def transcreate(request: TranscreateRequest):
     degraded = ctx.get("degraded", False)
     trace = ctx.get("trace", {})
     
+    # Add tc_core fields to trace if they exist
+    if "baseline_text" in ctx:
+        trace["baseline_text"] = ctx["baseline_text"]
+    if "tc_candidate_text" in ctx:
+        trace["tc_candidate_text"] = ctx["tc_candidate_text"]
+    if "tc_equal_baseline" in ctx.get("trace", {}):
+        trace["tc_equal_baseline"] = ctx["trace"]["tc_equal_baseline"]
+    
     # Step 6: Calculate diffs
     diffs = calculate_diffs(baseline_text, transcreated_text)
+    
+    # Ensure trace is properly merged
+    final_trace = trace.copy()  # Start with pipeline trace
+    final_trace.update({
+        "guard_latency_ms": int(guard_latency),
+        "tc_latency_ms": int(tc_latency),
+        "seed": seed
+    })
     
     return TranscreateResponse(
         baseline_text=baseline_text,
@@ -522,12 +568,7 @@ async def transcreate(request: TranscreateRequest):
             "level": request.level,
             "policies": request.policies.model_dump()
         },
-        trace={
-            "guard_latency_ms": int(guard_latency),
-            "tc_latency_ms": int(tc_latency),
-            "tc_model": trace.get("tc_model", ""),
-            "seed": seed
-        }
+        trace=final_trace
     )
 
 if __name__ == "__main__":

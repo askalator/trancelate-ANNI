@@ -1,20 +1,40 @@
+# Heavy artifacts (models, data files)
 .hf/
 llm/
 mt-ct2/
+models/
+*.bin
+*.safetensors
+*.onnx
+*.pt
+*.ckpt
+*.gguf
+*.spm
+
+# Runtime files
 run/
 __pycache__/
 *.pyc
+*.cache
 *.log
 *.pid
+
+# Database files
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal
+
+# Data files
 *.jsonl
 *.csv
-*.bin
-*.gguf
-*.spm
-.DS_Store
-.venv/
 *.tgz
+
+# Environment
+.venv/
 .env*
+
+# System files
+.DS_Store
+
+# Logs (except small JSON reports)
+logs/

@@ -1,7 +1,7 @@
 {
   "stages": [
     "tc_core",
-    "post_profile",
+    "claim_fit",
     "policy_check",
     "degrade"
   ]

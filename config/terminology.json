@@ -1,0 +1,29 @@
+{
+  "default": {
+    "enforce": "soft",
+    "prefer": {
+      "en": {
+        "e-mail": "email",
+        "web site": "website",
+        "web-site": "website"
+      },
+      "de": {
+        "Web Seite": "Website",
+        "E-Mail": "Email",
+        "Web-Seite": "Website"
+      }
+    },
+    "forbid": {
+      "en": [
+        "free shipping",
+        "lifetime guarantee",
+        "100% free"
+      ],
+      "de": [
+        "lebenslange Garantie",
+        "kostenloser Versand",
+        "100% kostenlos"
+      ]
+    }
+  }
+}
