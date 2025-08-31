@@ -192,12 +192,14 @@ class TranslationResponse(BaseModel):
 async def health():
     """Health check endpoint"""
     backend_status = _backend_status()
-    return {
+    resp = {
         "ok": True,
         "ready": True,
         "backend_alive": backend_status["backend_alive"],
         "backend_url": backend_status["backend_url"]
     }
+    resp.update(app_version())
+    return resp
 
 @app.get("/meta")
 async def meta():
