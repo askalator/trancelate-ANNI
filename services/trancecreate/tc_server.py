@@ -407,7 +407,9 @@ def calculate_diffs(baseline: str, transcreated: str) -> Dict[str, Any]:
 @app.get("/health")
 async def health():
     """Health check endpoint"""
-    return {"ok": True, "service": "TranceCreate", **app_version()}
+    resp = {"ok": True, "service": "TranceCreate"}
+    resp.update(app_version())
+    return resp
 
 @app.get("/profiles")
 async def get_profiles():

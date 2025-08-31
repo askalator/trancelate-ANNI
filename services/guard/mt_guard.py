@@ -205,12 +205,13 @@ async def health():
 async def meta():
     """Service metadata"""
     backend_status = _backend_status()
-    return {
+    resp = {
         "service": "ANNI Guard",
         "backend_url": backend_status["backend_url"],
-        "backend_alive": backend_status["backend_alive"],
-        **app_version()
+        "backend_alive": backend_status["backend_alive"]
     }
+    resp.update(app_version())
+    return resp
 
 @app.post("/translate", response_model=TranslationResponse)
 async def translate(request: TranslationRequest):

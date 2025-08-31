@@ -58,6 +58,8 @@ class HealthResponse(BaseModel):
     ready: bool = Field(..., description="Service readiness status")
     langs: List[str] = Field(..., description="Available languages")
     engine: str = Field(..., description="Primary spell engine (hunspell|pyspell)")
+    version: str = Field(..., description="Service version")
+    commit: str = Field(..., description="Git commit hash")
 
 class LanguagesResponse(BaseModel):
     langs: Dict[str, List[str]] = Field(..., description="Languages by support level: full, basic, unsupported")
@@ -74,20 +76,24 @@ async def health_check():
         # Determine primary engine
         engine = "hunspell" if supported["full"] else "pyspell"
         
+        version_info = app_version()
         return HealthResponse(
             ok=True,
             ready=True,
             langs=langs,
             engine=engine,
-            **app_version()
+            version=version_info["version"],
+            commit=version_info["commit"]
         )
     except Exception as e:
+        version_info = app_version()
         return HealthResponse(
             ok=False,
             ready=False,
             langs=[],
             engine="error",
-            **app_version()
+            version=version_info["version"],
+            commit=version_info["commit"]
         )
 
 @app.get("/languages", response_model=LanguagesResponse)

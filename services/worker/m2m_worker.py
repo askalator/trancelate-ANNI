@@ -33,9 +33,13 @@ class Req(BaseModel):
 def health():
     try:
         ensure_loaded()
-        return {"ok":True,"model":"m2m100_418M","ready":True, **app_version()}
+        resp = {"ok":True,"model":"m2m100_418M","ready":True}
+        resp.update(app_version())
+        return resp
     except Exception as e:
-        return {"ok":False,"error":str(e),"ready":False, **app_version()}
+        resp = {"ok":False,"error":str(e),"ready":False}
+        resp.update(app_version())
+        return resp
 
 @app.post("/translate")
 def translate(r:Req):
